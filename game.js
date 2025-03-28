@@ -18,6 +18,8 @@ const gameSpeed = 2;
 
 // Game state
 let gameRunning = false;
+let countdownActive = false;
+let countdownValue = 3;
 let score = 0;
 let frames = 0;
 let bird;
@@ -210,8 +212,84 @@ function init() {
         clouds.push(new Cloud());
     }
     
-    gameRunning = true;
-    gameLoop();
+    // Start countdown
+    startCountdown();
+}
+
+// Countdown function
+function startCountdown() {
+    countdownActive = true;
+    countdownValue = 3;
+    
+    // Position bird in the middle and freeze it
+    bird.y = canvas.height / 2;
+    bird.velocity = 0;
+    
+    // Start drawing the game
+    gameRunning = false;
+    drawGame();
+    
+    // Start countdown timer
+    const countdownTimer = setInterval(() => {
+        countdownValue--;
+        
+        if (countdownValue <= 0) {
+            clearInterval(countdownTimer);
+            countdownActive = false;
+            gameRunning = true;
+            gameLoop();
+        } else {
+            // Redraw with updated countdown value
+            drawGame();
+        }
+    }, 1000);
+}
+
+// Draw function (separate from game loop for countdown)
+function drawGame() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw sky gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#87CEEB');
+    gradient.addColorStop(1, '#1E90FF');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Update and draw clouds (only drawing during countdown, not updating position)
+    clouds.forEach(cloud => {
+        if (!countdownActive) cloud.update();
+        cloud.draw();
+    });
+    
+    // Update and draw backgrounds (only drawing during countdown, not updating position)
+    backgrounds.forEach(bg => {
+        if (!countdownActive) bg.update();
+        bg.draw();
+    });
+    
+    // Draw existing pipes without updating during countdown
+    pipes.forEach(pipe => {
+        pipe.draw();
+    });
+    
+    // Draw bird without updating during countdown
+    bird.draw();
+    
+    // Draw countdown text
+    if (countdownActive) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.font = 'bold 100px Arial';
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(countdownValue, canvas.width / 2, canvas.height / 2);
+        
+        ctx.font = 'bold 24px Arial';
+        ctx.fillText('Get Ready!', canvas.width / 2, canvas.height / 2 + 70);
+    }
 }
 
 // Game loop
